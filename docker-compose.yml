@@ -1,0 +1,63 @@
+version: '3'
+networks:
+  backend:
+    driver: bridge
+services:
+  app:
+    container_name: goo-backend
+    build: .
+    volumes:
+      - .docker:/go/src/goo-travel:cached
+    ports:
+      - "8000:8000"
+    tty: yes
+    depends_on:
+      - db
+      - rds
+      - pgadmin
+    environment:
+      - HOST=0.0.0.0
+    networks:
+      - backend
+
+  db:
+    container_name: goo-postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /data/postgres
+    volumes:
+      - .docker:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: goo-pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: info@goo.biz
+      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+       - .docker/:/var/lib/pgadmin
+
+    ports:
+      - "5050:80"
+    networks:
+      - backend
+    restart: unless-stopped
+
+  rds:
+    container_name: goo-redis
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+volumes:
+  data:
